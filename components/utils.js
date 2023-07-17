@@ -12,6 +12,11 @@ export class Beat {
     this.meterNum = Number(meterNum);
     this.meterDenom = Number(meterDenom);
     this.division = Number(division);
-    this.period = Math.round(60000 / this.bpm);
+    this.checkValues();
+  }
+  
+  checkValues() {
+    this.division = (this.division === 0 ? 1 : this.division);
+    this.period = Math.round(60000 / (this.bpm * this.division));
   }
 }

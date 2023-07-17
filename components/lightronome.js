@@ -1,12 +1,35 @@
 // This is our lightronome screen for metronome flashes.
 
 import React, { useContext, useRef, useEffect, useState } from "react";
-import { Animated, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 
 import { BeatContext } from "./utils";
 
 export default Lightronome = () => {
   const { beat, setBeat } = useContext(BeatContext);
+  const [count, setCount] = useState(0);
+  const fadeAnim = useRef(new Animated.Value(1)).current; // Initial value for opacity: 0
+
+  function lightronome() {
+    Animated.sequence([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: beat.period,
+        easing: Easing.poly(8),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      // Logic whenever an iteration finishes...
+      fadeAnim.setValue(1);
+      setCount((count) => count + 1);
+      lightronome();
+    });
+  }
+
+  useEffect(() => {
+    lightronome();
+  }, []);
+
   return (
     <View style={styles.container}>
       <Text style={styles.subTitle}>This is the FLASHING screen !</Text>
@@ -20,38 +43,20 @@ export default Lightronome = () => {
       <Text style={styles.label}>
         you just entered Division : {beat.division}
       </Text>
-      <BlinkSquare style={styles.square} duration={beat.period}></BlinkSquare>
+      <Animated.View
+        style={[
+          styles.square,
+          {
+            opacity: fadeAnim, // Bind opacity to animated value
+            backgroundColor: (count % (beat.meterNum * beat.division))==0 ? "#aa5fa4" : "#3a5fa4", // The first beat is red, the rest are blue.
+          },
+        ]}
+      >
+        <Text style={[styles.squareText]}>{(Math.floor(count / beat.division)) % beat.meterNum + 1}</Text>
+      </Animated.View>
     </View>
   );
 };
-
-function BlinkSquare(props) {
-  const [count, setCount] = useState(0);
-  const fadeAnim = useRef(new Animated.Value(0)).current; // Initial value for opacity: 0
-
-  // useEffect(() => {
-  Animated.loop(
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      // duration: 10000,
-      duration: props.duration,
-      useNativeDriver: true,
-    })
-  ).start();
-  // setCount((count) => count + 1);
-  // }, [fadeAnim]);
-
-  return (
-    <Animated.View // Special animatable View
-      style={{
-        ...props.style,
-        opacity: fadeAnim, // Bind opacity to animated value
-      }}
-    >
-      {/* {props.children} */}
-    </Animated.View>
-  );
-}
 
 const styles = StyleSheet.create({
   container: {
@@ -71,7 +76,10 @@ const styles = StyleSheet.create({
     textAlignVertical: "center",
   },
   square: {
-    backgroundColor: "#000000",
+    backgroundColor: "#3a5fa4",
     padding: 50,
+  },
+  squareText: {
+    color: "#fff",
   },
 });
